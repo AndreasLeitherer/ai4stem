@@ -1,0 +1,11 @@
+numpy
+pandas
+matplotlib
+matplotlib-scalebar
+opencv-python
+tensorflow
+scipy
+scikit-image
+abtem
+atomap
+pycpd
