@@ -12,6 +12,8 @@ setup(
     install_requires=['numpy', 'scipy', 'matplotlib',
                       'seaborn', 'pandas', 'opencv-python',
                       'scikit-image'],
-    package_data={'ai4stem': ['data/haadf_experimental_lattice_parameters.npy',
-                              'data/haadf_experimental_lattice_parameters_labels.npy']}
+    package_data={'ai4stem': ['data/experimental_images/*.npy',
+                              'data/nn_predictions/*.npy',
+                              'data/pretrained_models/*.h5,
+                              'data/reference_images/*.npy']}
 )
