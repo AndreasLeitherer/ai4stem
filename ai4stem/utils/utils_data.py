@@ -3,7 +3,7 @@ import os, sys
 import numpy as np
 from tensorflow.keras.models import load_model
 
-def get_data_filename(resource, package='ai4materials'):
+def get_data_filename(resource, package='ai4stem'):
     """Rewrite of pkgutil.get_data() that return the file path.
     Taken from: https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
     """
@@ -23,6 +23,10 @@ def get_data_filename(resource, package='ai4materials'):
 
     return resource_name
 
+def load_example_image():
+    path_to_image = get_data_filename('data/experimental_images/Fe_bcc_100.npy')
+    example_image = np.load(path_to_image)
+    return example_image
 
 def load_expimages():
     
@@ -42,6 +46,6 @@ def load_synthetic_image():
 
 
 def load_pretrained_model():
-    path_to_pretrained_model = get_data_filename('data/pretrained_models/optimal_model_1.h5', package='ai4stem')
+    path_to_pretrained_model = get_data_filename('data/pretrained_models/optimal_model.h5', package='ai4stem')
     model = load_model(path_to_pretrained_model)
     return model

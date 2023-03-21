@@ -14,6 +14,6 @@ setup(
                       'scikit-image'],
     package_data={'ai4stem': ['data/experimental_images/*.npy',
                               'data/nn_predictions/*.npy',
-                              'data/pretrained_models/*.h5,
+                              'data/pretrained_models/*.h5',
                               'data/reference_images/*.npy']}
 )
