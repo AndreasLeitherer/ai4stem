@@ -2,6 +2,7 @@ import pkgutil
 import os, sys
 import numpy as np
 from tensorflow.keras.models import load_model
+import json
 
 def get_data_filename(resource, package='ai4stem'):
     """Rewrite of pkgutil.get_data() that return the file path.
@@ -22,6 +23,17 @@ def get_data_filename(resource, package='ai4stem'):
     resource_name = os.path.normpath(os.path.join(*parts))
 
     return resource_name
+
+
+def load_class_dicts():
+    path_num_to_text = get_data_filename('data/class_definitions/numerical_to_text_labels.json')
+    path_text_to_num = get_data_filename('data/class_definitions/text_to_numerical_labels.json')
+
+    with open(path_num_to_text, 'r') as f:
+        numerical_to_text_labels = json.load(f)
+    with open(path_text_to_num, 'r') as f:
+        text_to_numerical_labels = json.load(f)
+    return numerical_to_text_labels, text_to_numerical_labels
 
 def load_example_image():
     path_to_image = get_data_filename('data/experimental_images/Fe_bcc_100.npy')
