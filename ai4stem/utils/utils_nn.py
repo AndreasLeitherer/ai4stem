@@ -36,36 +36,8 @@ def predict_with_uncertainty(data, model=None, model_type='classification', n_it
     - predictive_entropy: defined in Eq. 3.20
     - mutual_information: defined at pag. 53 (no Eq. number)
 
-    .. codeauthor:: Angelo Ziletti <angelo.ziletti@gmail.com>
+    .. codeauthor:: Angelo Ziletti <angelo.ziletti@gmail.com>, Andreas Leitherer <andreas.leitherer@gmail.com>
 
-    """
-
-    #logger.info("Calculating classification uncertainty.")
-
-    """
-    if model is None:
-        #logger.info("Using the model from Ziletti et al. Nature Communications, vol. 9, pp. 2775 (2018)")
-        model = load_nature_comm_ziletti2018_network()
-    """
-    # reshaping it according to Theano rule
-    # Theano backend uses (nb_sample, channels, height, width)
-    # data = reshape_images_to_theano(data) ## AL : WILL NOT WORK
-    # data = data.astype('float32')
-
-    # normalize each image separately
-    """
-    if True:
-        #data[ :, :, :] = (data[ :, :, :] - np.amin(data[ :, :, :])) / (
-        #            np.amax(data[ :, :, :]) - np.amin(data[ :, :, :]))
-        
-        for idx in range(data.shape[0]):
-            data[idx, :, :, :] = (data[idx, :, :, :] - np.amin(data[idx, :, :, :])) / (
-                    np.amax(data[idx, :, :, :]) - np.amin(data[idx, :, :, :]))
-        #for idx in range(data.shape[0]):
-        #    data[idx, :, :, :] = (data[idx, :, :, :] - np.amin(data[idx, :, :, :])) / (
-        #            np.amax(data[idx, :, :, :]) - np.amin(data[idx, :, :, :]))
-
-    print(data.shape)
     """
 
     labels = []
