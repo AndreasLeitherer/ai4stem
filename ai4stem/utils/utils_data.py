@@ -61,3 +61,20 @@ def load_pretrained_model():
     path_to_pretrained_model = get_data_filename('data/pretrained_models/optimal_model.h5', package='ai4stem')
     model = load_model(path_to_pretrained_model)
     return model
+
+
+def load_reference_lattices():
+
+    reference_data_path = get_data_filename('data/reference_images')
+    reference_images_paths = os.listdir(reference_data_path)
+
+    numerical_to_text_labels, text_to_numerical_labels = load_class_dicts()
+    class_labels = list(text_to_numerical_labels.keys())
+
+    reference_dict = {}
+    for class_label in class_labels:
+        for ref_image in reference_images_paths:
+            if class_label in ref_image:
+                reference_dict[class_label] = np.load(os.path.join(reference_data_path,
+                                                                  ref_image))
+    return reference_dict
