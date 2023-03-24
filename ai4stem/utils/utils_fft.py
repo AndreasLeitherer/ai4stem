@@ -44,9 +44,9 @@ def calc_fft(img, padding=(0, 0), power=2,
 
     if apply_window:
         # windowing
-        bw2d = np.outer(get_window('hanning',img.shape[0]), 
+        bw2d = np.outer(get_window('hann',img.shape[0]), 
                         np.ones(img.shape[1]))
-        bw2d_1 = np.transpose(np.outer(get_window('hanning',img.shape[1]), 
+        bw2d_1 = np.transpose(np.outer(get_window('hann',img.shape[1]), 
                                        np.ones(img.shape[0])))
         w = np.sqrt(bw2d * bw2d_1)
         img_windowed = img * w
