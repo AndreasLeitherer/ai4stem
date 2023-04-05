@@ -37,7 +37,7 @@ def localwindow(image_in, stride_size, pixel_max=100):
 
 def predict(image,
             model=None, n_iter=100,
-            stride_size=[12, 12], window_size=100,
+            stride_size=[36, 36], window_size=100,
             descriptor_params={'sigma': None, 'thresholding': True}):
     """
     Given input funciton, apply neural-network classifier to classify the image
