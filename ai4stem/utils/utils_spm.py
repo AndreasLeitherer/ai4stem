@@ -84,7 +84,7 @@ def predict(image,
         # Under construction: employ descriptor object.
         # fft_obj = FFT_HAADF(**descriptor_params)
         # fft_desc = fft_obj.calculate(sliced_image)
-        fft_desc = calc_fft(sliced_image, sigma=descriptor_params['simga'], 
+        fft_desc = calc_fft(sliced_image, sigma=descriptor_params['sigma'], 
                             thresholding=descriptor_params['thresholding'])
         fft_descriptors.append(fft_desc)
     
@@ -99,7 +99,11 @@ def predict(image,
                                                    model=model, 
                                                    model_type='classification', 
                                                    n_iter=n_iter)
-    sliced_images = np.reshape(sliced_images, (ni, nj))
-    fft_descriptors = np.reshape(fft_descriptors, (ni, nj))
-    return sliced_images, fft_descriptors, prediction, uncertainty
+    sliced_images = np.reshape(sliced_images, (ni, nj, window_size, window_size))
+    fft_descriptors = np.reshape(fft_descriptors, (ni, nj, 
+                                                   fft_descriptors[0].shape[0],
+                                                   fft_descriptors[0].shape[1]))
+    prediction = np.reshape(prediction, (ni, nj, prediction.shape[-1]))
+    mutual_information = np.reshape(uncertainty['mutual_information'], (ni, nj))
+    return sliced_images, fft_descriptors, prediction, mutual_information
                                  
