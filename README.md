@@ -4,9 +4,9 @@ ai4stem (Artificial-Intelligence-based Scanning Transmission Electron Microscopy
 This repository contains all the relevant code for reproducing the results of the manuscript
 
     A. Leitherer, B.C. Yeo, C. H. Liebscher, and L. M. Ghiringhelli.     
-    "Automatic Identification of Crystal Structures and Interfaces via Artificial-Intelligence-based Electron Microscopy"  (2023)
+    "Automatic Identification of Crystal Structures and Interfaces via Artificial-Intelligence-based Electron Microscopy" arXiv:2303.12702 (2023)
 
-For several examples on how to conduct analysis with ai4stem, the notebooks folder in this repository should be a good starting point.
+For several examples on how to conduct analysis with ai4stem, the scripts and notebooks folders in this repository should be a good starting point.
 
 ------------------
 ### Installation

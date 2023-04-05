@@ -3,6 +3,7 @@ import cv2
 from ai4stem.descriptors.fft_haadf import FFT_HAADF
 from ai4stem.utils.utils_nn import predict_with_uncertainty
 from ai4stem.utils.utils_data import load_pretrained_model
+from ai4stem.utils.utils_fft import calc_fft
 def localwindow(image_in, stride_size, pixel_max=100):
     x_max = image_in.shape[0]
     y_max = image_in.shape[1]
@@ -31,10 +32,46 @@ def localwindow(image_in, stride_size, pixel_max=100):
 
 
 
-def stem_spm(image,
-             model=None, n_iter=100,
-             stride_size=[12, 12], window_size=100,
-             descriptor_params={'sigma': None, 'thresholding': False}):
+
+
+
+def predict(image,
+            model=None, n_iter=100,
+            stride_size=[12, 12], window_size=100,
+            descriptor_params={'sigma': None, 'thresholding': True}):
+    """
+    Given input funciton, apply neural-network classifier to classify the image
+    in ai4stem-style (i.e., predict symmetry, lattice orientation, as well as quantify
+    uncertainty that allows to spot interface regions).
+
+    Parameters
+    ----------
+    image : numpy array
+        2D Input image.
+    model : tensorflow model object, optional
+        Neural-network classifier. The default is None.
+    n_iter : int, optional
+        Number of Monte Carlo samples. The default is 100.
+    stride_size : list, optional
+        1D Stride list, in units of pixels. The default is [12, 12].
+    window_size : int, optional
+        Window size in units of pixels. The default is 100.
+    descriptor_params : dict, optional
+        Dictionary with options for FFT-HAADF descritpor. 
+        The default is {'sigma': None, 'thresholding': False}.
+
+    Returns
+    -------
+    sliced_images : ndarray
+        2D array, size determined by input-image, stride, and window size.
+    fft_descriptors : ndarray
+        2D array, size determined by input-image, stride, and window size.
+    prediction : ndarray
+        2D array, size determined by input-image, stride, and window size.
+    uncertainty : ndarray
+        2D array, size determined by input-image, stride, and window size.
+
+    """
     
     # Extract windows
     sliced_images, spm_pos, ni, nj = localwindow(image, 
@@ -44,8 +81,11 @@ def stem_spm(image,
     # Calculate FFT
     fft_descriptors = []
     for sliced_image in sliced_images:
-        fft_obj = FFT_HAADF(**descriptor_params)
-        fft_desc = fft_obj.calculate(sliced_image)
+        # Under construction: employ descriptor object.
+        # fft_obj = FFT_HAADF(**descriptor_params)
+        # fft_desc = fft_obj.calculate(sliced_image)
+        fft_desc = calc_fft(sliced_image, sigma=descriptor_params['simga'], 
+                            thresholding=descriptor_params['thresholding'])
         fft_descriptors.append(fft_desc)
     
     # Load model
@@ -59,5 +99,7 @@ def stem_spm(image,
                                                    model=model, 
                                                    model_type='classification', 
                                                    n_iter=n_iter)
+    sliced_images = np.reshape(sliced_images, (ni, nj))
+    fft_descriptors = np.reshape(fft_descriptors, (ni, nj))
     return sliced_images, fft_descriptors, prediction, uncertainty
                                  
