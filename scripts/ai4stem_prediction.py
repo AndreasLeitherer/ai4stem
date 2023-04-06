@@ -1,14 +1,20 @@
 import os
+# tensorflow info/warnings switched off
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ai4stem.utils.utils_data import load_pretrained_model, load_example_image
-from ai4stem.utils.utils_spm import predict
+from ai4stem.utils.utils_prediction import predict
 
-
+import logging
 
 if __name__ == '__main__':
+    
+    # set up log file
+    logging.basicConfig(level=logging.INFO)
     
     # Specify example image
     # Here: Fe bcc [100] image loaded automatically
@@ -25,9 +31,9 @@ if __name__ == '__main__':
     # Adapt window size
     window_size = window_size_angstrom * (1. / pixel_to_angstrom)
     window_size = int(round(window_size))
-    print('For image called {}, window {} [Angstrom] corresponds to {} pixels'.format(image_name, 
-                                                                                      window_size_angstrom, 
-                                                                                      window_size))
+    logging.info('For image called {}, window {} [Angstrom] corresponds to {} pixels'.format(image_name, 
+                                                                                             window_size_angstrom, 
+                                                                                             window_size))
 
     # Strides [pixels] used in ai4stem algorithm
     # for fragmenting the input image 
@@ -41,7 +47,6 @@ if __name__ == '__main__':
     # specify nn model, here load pretrained model
     model = load_pretrained_model()
     model_name = 'pretrained_model'
-    model.summary()
 
     # MC dropout samples
     n_iter = 100
