@@ -6,11 +6,12 @@ def calc_fft(img, padding=(0, 0), power=2,
              sigma=None, r_cut=None,
              thresholding=False, apply_window=True, output_size=None,
              output_shape=(64, 64)):
-    """Given HAADF image, calculate HAADF-FFT descriptor
+    """
+    Given HAADF image, calculate HAADF-FFT descriptor.
     
-    Parameters: 
-    
-    img: np.array
+    Parameters
+    ----------
+    img: ndarray
         HAADF input image
     padding: tuple
         zero padding employed to bring image size to power of 2
@@ -34,7 +35,16 @@ def calc_fft(img, padding=(0, 0), power=2,
         Output size of fft, if None, fft size will be given
         by img.shape[0] and img.shape[1], if output size
         larger than image size, crop image, if smaller, apply 
-        zero padding 
+        zero padding
+        
+    Returns
+    ----------
+    fft_haadf_desc: ndarray
+        2D array containing FFT-HAADF descriptor
+        
+    .. codeauthors:: Andreas Leitherer <andreas.leitherer@gmail.com>,
+                     Byungchul Yeo <byeo@pknu.ac.kr>
+    
     """
 
     # First step: normalize image
@@ -116,8 +126,8 @@ def calc_fft(img, padding=(0, 0), power=2,
                                   int(float(output.shape[1])/2.0) - int(output_shape[1]/2.) + j]
 
     
-    output2 = cv2.normalize(output2, None, 
-                            alpha=0, beta=1, 
-                            norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    fft_haadf_desc = cv2.normalize(output2, None, 
+                                   alpha=0, beta=1, 
+                                   norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     
-    return output2
+    return fft_haadf_desc
