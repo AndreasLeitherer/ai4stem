@@ -1,10 +1,11 @@
 # ai4stem
 ai4stem (Artificial-Intelligence-based Scanning Transmission Electron Microscopy) is an Artificial-Intelligence tool for the characterization of atomic-resolution electron microscopy images. 
 
-This repository contains all the relevant code for reproducing the results of the manuscript
+This repository is under active development (especially the folders 'ai4stem/descriptors' and ai4stem/augmentation') but already contains all the relevant code for reproducing the results of the manuscript
 
     A. Leitherer, B.C. Yeo, C. H. Liebscher, and L. M. Ghiringhelli.     
-    "Automatic Identification of Crystal Structures and Interfaces via Artificial-Intelligence-based Electron Microscopy" arXiv:2303.12702 (2023)
+    "Automatic Identification of Crystal Structures and Interfaces via Artificial-Intelligence-based Electron Microscopy" 
+    arXiv:2303.12702 (2023)
 
 For several examples on how to conduct analysis with ai4stem, the scripts and notebooks folders in this repository should be a good starting point.
 
@@ -18,6 +19,7 @@ We recommend to create a virtual python >=3.7 environment
     git clone https://github.com/AndreasLeitherer/ai4stem.git
     git cd ai4stem
     pip install -e .
+
 Moreover, several requirements are listed in the requirements text document and can be easily installed via
 
     pip install -r requirements.txt
