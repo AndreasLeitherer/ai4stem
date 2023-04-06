@@ -2,13 +2,13 @@ import tensorflow
 from tensorflow.keras.layers import Conv2D, LeakyReLU, MaxPool2D, Flatten, Dropout, Dense, Input
 
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 from tensorflow.keras.models import load_model
 
 import numpy as np
 
-from sklearn.model_selection import train_test_split
+
 from sklearn.metrics import accuracy_score
 
 # from hyperopt import hp, fmin, tpe, STATUS_OK, Trials
@@ -16,37 +16,69 @@ from sklearn.metrics import accuracy_score
 
 import os
 
-import csv
 import time
 from tensorflow.keras.regularizers import L2
 
 
-from scipy.stats import mode
 from scipy import stats
 
-def predict_with_uncertainty(data, model=None, model_type='classification', n_iter=1000):
-    """This function allows to calculate the uncertainty of a neural network model using dropout.
+import logging
 
-    This follows Chap. 3 in Yarin Gal's PhD thesis:
+def predict_with_uncertainty(data, model, model_type='classification', n_iter=100):
+    """
+    This function allows to calculate the uncertainty of a neural network model using 
+    Monte Carlo dropout. This follows Chap. 3 in Yarin Gal's PhD thesis:
     http://mlg.eng.cam.ac.uk/yarin/thesis/thesis.pdf
-
     We calculate the uncertainty of the neural network predictions in the three ways proposed in Gal's PhD thesis,
      as presented at pag. 51-54:
     - variation_ratio: defined in Eq. 3.19
     - predictive_entropy: defined in Eq. 3.20
     - mutual_information: defined at pag. 53 (no Eq. number)
 
-    .. codeauthor:: Angelo Ziletti <angelo.ziletti@gmail.com>, Andreas Leitherer <andreas.leitherer@gmail.com>
+    Parameters
+    ----------
+    data : ndarray
+        Input data (note: has to be provided in a shape that 
+        is compatible with the neural-network input shape).
+    model : keras.engine.functional.Functional
+        Keras/Tensorflow model object.
+    model_type : string, optional
+        Classification task, either 'regression' or 'classification'.
+        The default is 'classification'.
+    n_iter : int, optional
+        Number of Monte Carlo samples. The default is 100.
+
+    Raises
+    ------
+    ValueError
+        If model_type is not 'regression' or 'classification',
+        a ValueError is raised.
+
+    Returns
+    -------
+    prediction : ndarray
+        Numpy array containing the (mean) predictions (for classification:
+        corresponds to the classification probabilities, averaged
+        over the Monte Carlo samples).
+    uncertainty : dict
+        Dictionary with three keys whose corresponding 
+        values are three uncertainty quantifiers (variation ratio,
+        predictive entropy, and mutual information). These values 
+        are 1D numpy arrays.
+        
+    .. codeauthors:: Angelo Ziletti <angelo.ziletti@gmail.com>, 
+                    Andreas Leitherer <andreas.leitherer@gmail.com>
 
     """
-
+    logging.info("Calculate predictions for {} images using {} Monte Carlo samples.".format(data.shape[0],
+                                                                                            n_iter))
     labels = []
     results = []
     for idx_iter in range(n_iter):
         if (idx_iter % (int(n_iter) / 10 + 1)) == 0:
-            print("Performing forward pass: {0}/{1}".format(idx_iter + 1, n_iter))
+            logging.info("Performing forward pass: {0}/{1}".format(idx_iter + 1, n_iter))
 
-        result = model.predict(data)
+        result = model.predict(data, verbose=0)
         label = result.argmax(axis=-1)
 
         labels.append(label)
@@ -54,6 +86,8 @@ def predict_with_uncertainty(data, model=None, model_type='classification', n_it
 
     results = np.asarray(results)
     prediction = results.mean(axis=0)
+    
+    logging.info("Calculate uncertainty.")
 
     if model_type == 'regression':
         predictive_variance = results.var(axis=0)
@@ -88,56 +122,82 @@ def predict_with_uncertainty(data, model=None, model_type='classification', n_it
 
 
 
-def decode_preds(data, model, n_iter=1000):
+def decode_preds(data, model, n_iter=100):
+    """
+    Function for calculating mean predictions 
+    (and no further uncertainty quantifier).
+
+    Parameters
+    ----------
+    data : ndarray
+        Input data (note: has to be provided in a shape that 
+        is compatible with the neural-network input shape).
+    model : keras.engine.functional.Functional
+        Keras/Tensorflow model object.
+    n_iter : int, optional
+        Number of Monte Carlo samples. The default is 100.
+
+    Returns
+    -------
+    predictions : TYPE
+        DESCRIPTION.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
 
     results = []
     for idx in range(n_iter):
-        pred = model.predict(data, batch_size=2048)
+        pred = model.predict(data)
         results.append(pred)
 
     results = np.asarray(results)
     predictions = np.mean(results, axis=0)
     return predictions
 
-def train_and_test_model(model, X_train, y_train, X_val, y_val, savepath_model,
-                         epochs=100, batch_size=64, verbose=1, n_iter=1000):
+def cnn_model(input_shape=(64, 64, 1), dropout=0.07, alpha=0.0, 
+              nb_blocks = 3, filter_sizes=[32, 16, 8], kernel_size=(3,3), 
+              nb_classes=10, l2_value=0.0):
+    """
+    Create Convolutional-Neural-Network classifier. Standard settings
+    correspond to the model employed in Leitherer et al. arXiv:2303.12702 (2023).
 
-    callbacks_savepath = os.path.join(savepath_model, 'model_it_{}.h5'.format(ITERATION))
+    Parameters
+    ----------
+    input_shape : tuple, optional
+        Model input shape. The default is (64, 64, 1).
+    dropout : float, optional
+        Dropout ratio applied to all weight layers. The default is 0.07.
+    alpha : float, optional
+        Parameter shifting activation origin in Leaky ReLU activation function. 
+        The default is 0.0.
+    nb_blocks : int, optional
+        Number of layer blocks where one block contains
+        two convolutional layers and one Max Pooling operation. The default is 3.
+    filter_sizes : list, optional
+        1D list containing the size of the convolutional filters
+        in each block (same filter size used for both convolutional
+        layers of a block). The default is [32, 16, 8].
+    kernel_size : tuple, optional
+        Kernel size used for all convolutional layers. The default is (3,3).
+    nb_classes : int, optional
+        Number of classes. The default is 10.
+    l2_value : float, optional
+        L2 regularization parameter. The default is 0.0.
 
-    callbacks = []
-    monitor = 'val_loss'
-    mode = 'min'
-    #monitor = 'val_categorical_accuracy'
-    #mode = 'max'    
-    save_model_per_epoch = ModelCheckpoint(callbacks_savepath, monitor=monitor, verbose=1,
-                                       save_best_only=True, mode=mode, period=1)
-    callbacks.append(save_model_per_epoch)
+    Raises
+    ------
+    ValueError
+        Check that number of filters and the filter sizes have the same length.
 
-    #es = EarlyStopping(monitor=monitor, mode=mode, patience=10)
-    #callbacks.append(es)
+    Returns
+    -------
+    model : keras.engine.functional.Functional
+        TCompiled Tensorflow/Keras model.
+    
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
 
-    # Fit model
-    history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
-                        verbose=verbose, validation_data=(X_val, y_val),
-                        callbacks=callbacks)
-
-    optimal_model = load_model(callbacks_savepath)
-
-
-    #train_pred = decode_preds(data=X_train, model=optimal_model, n_iter=n_iter)
-    acc_train = 0.0 #accuracy_score(y_true=y_train.argmax(axis=-1), y_pred = train_pred.argmax(axis=-1))
-
-    val_pred = decode_preds(data=X_val, model=optimal_model, n_iter=n_iter)
-    np.save(os.path.join(savepath_model, 'it_{}_predictions.npy'.format(ITERATION)), val_pred)
-    acc_val = accuracy_score(y_true=y_val.argmax(axis=-1), y_pred = val_pred.argmax(axis=-1))
-
-    return acc_train, acc_val, optimal_model, history
-
-
-
-def cnn_model(input_shape=(64, 64, 1), dropout=0.05,
-              alpha=0.0, nb_blocks = 3, filter_sizes=[32, 16, 8],
-              kernel_size=(3,3), nb_classes=11, l2_value=1e-3):
+    """
 
     if not len(filter_sizes) == nb_blocks:
         raise ValueError("# filters must be compatible with nb_blocks.")
@@ -189,42 +249,169 @@ def cnn_model(input_shape=(64, 64, 1), dropout=0.05,
 
 
 
+
+def train_and_test_model(model, X_train, y_train, X_val, y_val, savepath_model,
+                         epochs=10, batch_size=64, verbose=1, n_iter=100):
+    """
+    Conduct training and testing for given model and training/test data. 
+    A classification task is assumed in this function.
+
+    Parameters
+    ----------
+    model : keras.engine.functional.Functional
+        Tensorflow/Keras model.
+    X_train : ndarray
+        Training data.
+    y_train : array
+        Training labels (one-hot encoded).
+    X_val : ndarray
+        Validation data.
+    y_val : array
+        Validation labels (one-hot encoded).
+    savepath_model : string
+        Path where to save the neural-network model.
+    epochs : int, optional
+        Number of training epochs. The default is 10.
+    batch_size : int, optional
+        Batch size employed in SGD training. The default is 64.
+    verbose : int, optional
+        Verbosity setting during training. The default is 1.
+    n_iter : int, optional
+        Number of Monte Carlo samples. The default is 100.
+
+    Returns
+    -------
+    acc_train : float
+        Accuracy on training set.
+    acc_val : float
+        Accuracy on validation set.
+    optimal_model : keras.engine.functional.Functional
+        Trained model (the one with optimal performance,
+        here with minimal validation loss, which is the strategy 
+        employed in Leitherer et al. arXiv:2303.12702 (2023)).
+    history : dict
+        History dictionary containing training/validation loss/accuracy
+        over all training epochs.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
+
+    callbacks_savepath = os.path.join(savepath_model, 'model_intermediate.h5')
+
+    callbacks = []
+    monitor = 'val_loss'
+    mode = 'min'
+    # Alternative: monitor validation accuracy.
+    #monitor = 'val_categorical_accuracy'
+    #mode = 'max'    
+    save_model_per_epoch = ModelCheckpoint(callbacks_savepath, monitor=monitor, verbose=1,
+                                       save_best_only=True, mode=mode, period=1)
+    callbacks.append(save_model_per_epoch)
+
+    # Additional possibility: use Early stopping.
+    #es = EarlyStopping(monitor=monitor, mode=mode, patience=10)
+    #callbacks.append(es)
+
+    # Fit model
+    logging.info('Start model fitting.')
+    history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size,
+                        verbose=verbose, validation_data=(X_val, y_val),
+                        callbacks=callbacks)
+    logging.info('Model fitting finished, now load optimal model.')
+    optimal_model = load_model(callbacks_savepath)
+
+    logging.info('Calculate training predictions and classification accuracy.')
+    train_pred = decode_preds(data=X_train, model=optimal_model, n_iter=n_iter)
+    acc_train = accuracy_score(y_true=y_train.argmax(axis=-1), y_pred = train_pred.argmax(axis=-1))
+    
+    logging.info('Calculate validation predictions and classification accuracy.')
+    val_pred = decode_preds(data=X_val, model=optimal_model, n_iter=n_iter)
+    acc_val = accuracy_score(y_true=y_val.argmax(axis=-1), y_pred = val_pred.argmax(axis=-1))
+
+    logging.info('Model evaluation finished.')
+
+    return acc_train, acc_val, optimal_model, history
+
+
+
+
 def start_training(X_train, X_val, y_train, y_val, 
                    savepath_model=None, params=None):
+    """
+    Given training data, perform training of Bayesian Convolutional
+    Neural Network (standard settings reproduce model training in
+    Leitherer et al. arXiv:2303.12702 (2023))
+
+    Parameters
+    ----------
+    X_train : ndarray
+        Training data.
+    X_val : ndarray
+        Validation data.
+    y_train : array
+        Training labels (one-hot-encoded format).
+    y_val : TYPE
+        Validation labels (one-hot-encoded format).
+    savepath_model : string, optional
+        Path where neural-network model is saved. The default is None and 
+        in this case, the current path will be used.
+    params : dict, optional
+        Parameters specifying training procedure including 
+        the number of epochs, batch size, alpha parameter (Leaky-ReLU parameter),
+        kernel size, architecture (number of convolutional layers and filter 
+        sizes per block), dropout ratio, L2 regularization parameter,
+        and number of Monte Carlo samples. The default is None, in which case
+        the settings in Leitherer et al. arXiv:2303.12702 (2023) are used.
+
+    Returns
+    -------
+    acc_train : float
+        Accuracy on training set.
+    acc_val : float
+        Accuracy on validation set.
+    model : keras.engine.functional.Functional
+        Trained model (the one with optimal performance,
+        here with minimal validation loss, which is the strategy 
+        employed in Leitherer et al. arXiv:2303.12702 (2023)).
+    history : dict
+        History dictionary containing training/validation loss/accuracy
+        over all training epochs.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
     if savepath_model == None:
         savepath_model = os.getcwd()
     if params == None:
-        params = {"epochs": 5, "batch_size": 64, "alpha": 0.0,
-                "kernel_size": (7,7),
+        params = {"epochs": 10, "batch_size": 64, "alpha": 0.0,
+                "kernel_size": (3, 3),
                 "architecture": (3, [32, 16, 8]),
-                "dropout": 0.1,
+                "dropout": 0.07,
                 "l2_value": 0.0,
                 'n_iter':10}
-    n_iter = params['n_iter']
-    global ITERATION
-    ITERATION = 0
     
-    
+    logging.info('Start training.')
     t_start = time.time()
     
-    
+    logging.info('Define and compile Bayesian CNN model.')
     model = cnn_model(input_shape=(64, 64, 1), dropout=params["dropout"], alpha=params["alpha"],
-                      nb_blocks=params["architecture"][0], filter_sizes=params["architecture"][1],
-                      kernel_size=params["kernel_size"], nb_classes=np.unique(y_val.argmax(axis=-1)).size,
-                      l2_value=params['l2_value'])
-    
-    acc_training, acc_validation, model, history = train_and_test_model(model=model, batch_size=params['batch_size'],
+                  nb_blocks=params["architecture"][0], filter_sizes=params["architecture"][1],
+                  kernel_size=params["kernel_size"], nb_classes=np.unique(y_val.argmax(axis=-1)).size,
+                  l2_value=params['l2_value'])
+
+    acc_training, acc_validation, model, history = train_and_test_model(model=model, 
+                                                                        batch_size=params['batch_size'],
                                                                         epochs=params['epochs'],
-                                                                        X_train=X_train, y_train=y_train,
-                                                                        X_val=X_val, y_val=y_val, verbose=1,
-                                                                        n_iter=n_iter,
-                                                                        savepath_model=savepath_model)#1000)
-    
-    
-    for key in history.history:
-        np.save(os.path.join(savepath_model, 'it_{}_{}.npy'.format(ITERATION, key)), history.history[key])
-    
-    
+                                                                        X_train=X_train, 
+                                                                        y_train=y_train,
+                                                                        X_val=X_val, 
+                                                                        y_val=y_val, 
+                                                                        verbose=1,
+                                                                        n_iter=params['n_iter'],
+                                                                        savepath_model=savepath_model)
     t_end = time.time()
     eval_time = round(abs(t_start-t_end),3)
-    print('Training finished in {}s'.format(eval_time))
+    logging.info('Training and model evaluation finished in {}s'.format(eval_time))
+    
+    return acc_training, acc_validation, model, history
