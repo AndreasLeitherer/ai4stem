@@ -5,8 +5,26 @@ from tensorflow.keras.models import load_model
 import json
 
 def get_data_filename(resource, package='ai4stem'):
-    """Rewrite of pkgutil.get_data() that return the file path.
+    """
+    "Rewrite of pkgutil.get_data() that return the file path.
     Taken from: https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
+
+    Parameters
+    ----------
+    resource : string
+        Path to data to be load, relative to the location
+        of the python package specified in the package argument.
+    package : string, optional
+        Python package to which the data to be loaded refers to.
+        The default is 'ai4stem'.
+
+    Returns
+    -------
+    resource_name : string
+        Absolute path to data.
+    
+    .. codeauthor:: Angelo Ziletti <angelo.ziletti@gmail.com>
+
     """
     loader = pkgutil.get_loader(package)
     if loader is None or not hasattr(loader, 'get_data'):
@@ -26,6 +44,22 @@ def get_data_filename(resource, package='ai4stem'):
 
 
 def load_class_dicts():
+    """
+    Load json dicts that specify the relation between output neurons
+    of pretrained neural-network model and the corresponding class labels.
+    
+    Returns
+    -------
+    numerical_to_text_labels : dict
+        Dictionary containing integer labels as keys
+        and class labels (text) as values.
+    text_to_numerical_labels: dict
+        Dictionary containing class labels (text) as keys
+        and integer labels as values.
+    
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+    
+    """
     path_num_to_text = get_data_filename('data/class_definitions/numerical_to_text_labels.json')
     path_text_to_num = get_data_filename('data/class_definitions/text_to_numerical_labels.json')
 
@@ -36,34 +70,55 @@ def load_class_dicts():
     return numerical_to_text_labels, text_to_numerical_labels
 
 def load_example_image():
+    """
+    Load Fe bcc [100] example image.
+
+    Returns
+    -------
+    example_image : ndarray
+        Fe bcc [100] example image.
+    
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
     path_to_image = get_data_filename('data/experimental_images/Fe_bcc_100.npy')
     example_image = np.load(path_to_image)
     return example_image
 
-def load_expimages():
-    
-    # Load data
-    path_to_exp_images = get_data_filename('data/haadf_experimental_lattice_parameters.npy', package='ai4stem')
-    haadf_images = np.load(path_to_exp_images)
-    
-    path_to_labels = get_data_filename('data/haadf_experimental_lattice_parameters_labels.npy', package='ai4stem')
-    haadf_labels = np.load(path_to_labels, allow_pickle=True)
-    
-    return haadf_images, haadf_labels
-
-def load_synthetic_image():
-    path_to_synthetic_image = get_data_filename('data/synthetic_images/synthetic_polycrystal_w_amorphous.npy')
-    synthetic_image = np.load(path_to_synthetic_image)
-    return synthetic_image
-
 
 def load_pretrained_model():
+    """
+    Load pretrained neural-network model employed 
+    in Leitherer et al. arXiv:2303.12702 (2023).
+
+    Returns
+    -------
+    model : keras.engine.functional.Functional
+        Tensorflow/Keras model object.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
     path_to_pretrained_model = get_data_filename('data/pretrained_models/optimal_model.h5', package='ai4stem')
     model = load_model(path_to_pretrained_model)
     return model
 
 
 def load_reference_lattices():
+    """
+    Load reference lattices (employed for training model
+    in Leitherer et al. arXiv:2303.12702 (2023)) that 
+    can be used to calculate the local lattice rotation
+    (cf. Fig. 4 in Leitherer et al. arXiv:2303.12702 (2023))
+
+    Returns
+    -------
+    reference_dict : TYPE
+        DESCRIPTION.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
 
     reference_data_path = get_data_filename('data/reference_images')
     reference_images_paths = os.listdir(reference_data_path)
