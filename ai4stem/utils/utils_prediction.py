@@ -1,10 +1,38 @@
 import numpy as np
-import cv2
-from ai4stem.descriptors.fft_haadf import FFT_HAADF
+# from ai4stem.descriptors.fft_haadf import FFT_HAADF
 from ai4stem.utils.utils_nn import predict_with_uncertainty
 from ai4stem.utils.utils_data import load_pretrained_model
 from ai4stem.utils.utils_fft import calc_fft
+import logging
+
 def localwindow(image_in, stride_size, pixel_max=100):
+    """
+    Extract local fragments from input image.
+
+    Parameters
+    ----------
+    image_in : ndarray
+        Input image (2D numpy array).
+    stride_size : list
+        2D list specifying the number of strides with which
+        the input image is scanned.
+    pixel_max : int, optional
+        Window size. The default is 100.
+
+    Returns
+    -------
+    images : ndarray
+        DESCRIPTION.
+    spm_pos : ndarray
+        indices of strides collected in 2D array.
+    ni : int
+        Number of horizontal strides.
+    nj : int
+        Number of vertical strides.
+        
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+
+    """
     x_max = image_in.shape[0]
     y_max = image_in.shape[1]
 
@@ -28,7 +56,7 @@ def localwindow(image_in, stride_size, pixel_max=100):
             images.append(image)
             spm_pos.append([i, j])
         i += stride_size[0]
-    return images, np.asarray(spm_pos), ni, nj
+    return np.asarray(images), np.asarray(spm_pos), ni, nj
 
 
 
@@ -70,15 +98,19 @@ def predict(image,
         2D array, size determined by input-image, stride, and window size.
     uncertainty : ndarray
         2D array, size determined by input-image, stride, and window size.
-
-    """
     
+    .. codeauthor:: Andreas Leitherer <andreas.leitherer@gmail.com>
+    
+    """
+    logging.info("Begin ai4stem analysis.")
     # Extract windows
+    logging.info("Step 1: Fragementation")
     sliced_images, spm_pos, ni, nj = localwindow(image, 
                                                  stride_size=stride_size, 
                                                  pixel_max=window_size)
     
     # Calculate FFT
+    logging.info("Step 2: Calculate FFT HAADF descriptor.")
     fft_descriptors = []
     for sliced_image in sliced_images:
         # Under construction: employ descriptor object.
@@ -89,16 +121,18 @@ def predict(image,
         fft_descriptors.append(fft_desc)
     
     # Load model
+    logging.info("Load model.")
     if model == None:
         model = load_pretrained_model()
     repeated_images = np.array([np.stack([_]) for _ in fft_descriptors])
     repeated_images = np.moveaxis(repeated_images, 1, -1)
 
-
+    logging.info("Calculate neural-network predictions and uncertainty.")
     prediction, uncertainty = predict_with_uncertainty(repeated_images, 
                                                    model=model, 
                                                    model_type='classification', 
                                                    n_iter=n_iter)
+    logging.info("ai4stem analysis finished.")
     sliced_images = np.reshape(sliced_images, (ni, nj, window_size, window_size))
     fft_descriptors = np.reshape(fft_descriptors, (ni, nj, 
                                                    fft_descriptors[0].shape[0],
