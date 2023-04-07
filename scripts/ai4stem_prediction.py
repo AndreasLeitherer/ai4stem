@@ -66,15 +66,15 @@ if __name__ == '__main__':
 
     im1 = axs[0].imshow(input_image, cmap='gray')
     axs[0].set_title('Input image')
-    fig.colorbar(im1, ax=axs[0], orientation='vertical')
+    fig.colorbar(im1, ax=axs[0], orientation='vertical', fraction=0.05)
 
-    im2 = axs[1].imshow(argmax_pred, cmap='tab20')
+    im2 = axs[1].imshow(argmax_pred, cmap='tab10')
     axs[1].set_title('Assigned label')
-    fig.colorbar(im2, ax=axs[1],  orientation='vertical')
+    fig.colorbar(im2, ax=axs[1],  orientation='vertical', fraction=0.05)
 
     im3 = axs[2].imshow(uncertainty, cmap='hot', vmin=0.0)
-    axs[2].set_title('Bayesian uncertainty (mutual information)')
-    fig.colorbar(im3, ax=axs[2],  orientation='vertical')
+    axs[2].set_title('Bayesian uncertainty \n (mutual information)')
+    fig.colorbar(im3, ax=axs[2],  orientation='vertical', fraction=0.05)
     
     axs[0].axis('off')
     axs[1].axis('off')
