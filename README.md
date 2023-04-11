@@ -9,6 +9,9 @@ This repository is under active development (especially the folders 'ai4stem/des
 
 For several examples on how to conduct analysis with ai4stem, the scripts and notebooks folders in this repository should be a good starting point.
 
+Alternatively, you may run a notebook on google colab:
+[ai4stem quickstart](https://colab.research.google.com/github/AndreasLeitherer/ai4stem/blob/main/notebooks/Application_of_pretrained_model.ipynb)
+
 ------------------
 ### Installation
 ------------------
