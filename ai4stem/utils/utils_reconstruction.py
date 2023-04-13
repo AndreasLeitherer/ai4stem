@@ -175,7 +175,33 @@ def get_nn_distance(atoms, distribution='quantile_nn', cutoff=20.0,
 def norm_window_lattice(atomic_columns, reference_lattice, 
                         window_size, pixel_to_angstrom):
     """
-    Helper function for normalizign the lattice.
+    Helper function for normalizing input lattice, 
+    where normalization is performed with respect to a reference lattice.
+    The input lattice is shifted to the origin and 
+    then a radial mask is iteratively applied, 
+    cropping the input lattice until it contains 
+    the same number of coordinates as the reference lattice.
+
+    Parameters
+    ----------
+    atomic_columns : ndarray
+        2D numpy array containing real space 2D lattice
+        coordinates reconstructed from image 
+        (i.e., the atomic column positions).
+    reference_lattice : ndarray
+        2D numpy array containtin the 2D reference lattice 
+        coordinates. This lattice is used as reference. 
+    window_size : float
+        Window size employed, in units of pixels.
+    pixel_to_angstrom : float
+        Relation between pixel and Angstrom, i.e.,
+        the amount of Angstrom corresponding to one pixel.
+
+    Returns
+    -------
+    lattice : ndarray
+        Normed lattice.
+
     """
     
     # Select box
