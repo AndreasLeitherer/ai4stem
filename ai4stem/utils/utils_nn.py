@@ -148,7 +148,7 @@ def decode_preds(data, model, n_iter=100):
 
     results = []
     for idx in range(n_iter):
-        pred = model.predict(data)
+        pred = model.predict(data, verbose=0)
         results.append(pred)
 
     results = np.asarray(results)
