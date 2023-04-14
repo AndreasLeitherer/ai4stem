@@ -1,5 +1,5 @@
 # ai4stem
-ai4stem (Artificial-Intelligence-based Scanning Transmission Electron Microscopy) is an Artificial-Intelligence tool for the characterization of atomic-resolution electron microscopy images. 
+This repository contains AI-STEM (Artificial-Intelligence-based Scanning Transmission Electron Microscopy), an Artificial-Intelligence tool for the characterization of atomic-resolution electron microscopy images. 
 
 This repository is under active development (especially the folders 'ai4stem/descriptors' and ai4stem/augmentation') but already contains all the relevant code for reproducing the results of the manuscript
 
