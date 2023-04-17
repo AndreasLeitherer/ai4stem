@@ -5,6 +5,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 
 from tensorflow.keras.models import load_model
+from tensorflow.keras.models import Model
 
 import numpy as np
 
@@ -415,3 +416,22 @@ def start_training(X_train, X_val, y_train, y_val,
     logging.info('Training and model evaluation finished in {}s'.format(eval_time))
     
     return acc_training, acc_validation, model, history
+
+
+def get_truncated_model(model, layer_name):
+    # Define model, where remove last classification layer
+    inputs = model.input
+    outputs = model.get_layer(layer_name).output
+    truncated_model = Model(inputs=inputs,
+                            outputs=outputs)
+    return truncated_model
+
+def get_nn_representations(model, data, 
+                           layer_name='Dense_1', n_iter=100):
+    
+    truncated_model = get_truncated_model(model, layer_name)
+    nn_representations = decode_preds(data, 
+                                      truncated_model, 
+                                      n_iter=n_iter)
+    
+    return nn_representations
