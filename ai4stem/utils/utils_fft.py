@@ -4,7 +4,7 @@ from scipy.signal import get_window
 
 def calc_fft(img, padding=(0, 0), power=2,
              sigma=None, r_cut=None,
-             thresholding=False, apply_window=True, output_size=None,
+             thresholding=True, apply_window=True, output_size=None,
              output_shape=(64, 64)):
     """
     Given HAADF image, calculate HAADF-FFT descriptor.
