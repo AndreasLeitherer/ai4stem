@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 if __name__ == '__main__':
     
     image = load_example_image()
-    image_name = 'Cu_fcc_100'
+    image_name = 'Fe_bcc_100'
     pixel_to_angstrom = 0.1245
     window_size = int(12. / pixel_to_angstrom)
     stride_size = [36, 36]
