@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 import base64
 from ai4stem.utils.utils_prediction import predict
+from ai4stem.utils.utils_nn import get_truncated_model, get_nn_representations, reshape_data_to_input_size
 
 class UnsupervisedLearning():
     """
@@ -39,8 +40,11 @@ class UnsupervisedLearning():
 
 def embeddable_image(data):
     """
-    Convert input data into image that can be embedded into 
+    Convert input data (an image) such that it can be embedded into 
     an interactive plot (in particular, bokeh hover plot in jupter notebook).
+    Using BytesIO, the input data can be kept as bytes in an in-memory buffer
+    (see https://www.digitalocean.com/community/tutorials/python-io-bytesio-stringio
+     for more details)
 
     Parameters
     ----------
@@ -52,7 +56,7 @@ def embeddable_image(data):
     string
         Value string of BytesIO object that  
         can be passed to interactive bokeh tools in jupyter notebook 
-        (see unuspervised learning notebook).
+        (see unuspervised learning notebook for an example).
 
     """
     data = cv2.normalize(data, None,
@@ -72,20 +76,45 @@ def embeddable_image(data):
         
         
 def unsupervised_analysis(image, window_size=100, stride_size=[36, 36], 
-                          model=None, n_iter=100, method='umap', params=None):
-    
-    if model == None:
+                          model=None, layer_name=None, n_iter=100, 
+                          method='umap', params=None):
+
+
+    # Check if model and network layer are specified correctly
+    if model == None and layer_name == None:
         model = load_pretrained_model()
+        layer_name = 'Dense_1'
+    elif model == None and not (layer_name == None):
+        model = load_pretrained_model()
+        if not (layer_name in [_.name for _ in model.layers]):
+            raise ValueError("Model was None, so used pretrained model - but specified layer name is not compatible.")
+    elif not (model == None) and layer_name == None:
+        raise ValueError("Layer name was not specified but the model was. Please specify both or none.")
+        
+    
+    # Set unsupervised analysis parameters
     if params == None:
         params = {'n_neighbors': 200,
                   'min_dist': 0.9,
                   'metric': 'euclidean',
                   'n_components': 2}
-        
     
+    # get local fragments and FFT-HAADF descriptors
+    sliced_images, fft_descriptors = predict(image, model, n_iter, 
+                                             stride_size, window_size,
+                                             only_fragments_and_descriptor=True)
     
-    sliced_images, fft_descriptors, prediction, mutual_information = predict(image, model, n_iter, 
-                                                                             stride_size, window_size)
+    # reshape data
+    data = reshape_data_to_input_size(fft_descriptors, model)
     
+    # get neural-network representations
+    nn_representations = get_nn_representations(model, data, 
+                                                layer_name, n_iter)
+    
+    # conduct unsupervised analysis
+    unsupervised_method = UnsupervisedLearning(method, params)
+    embedding = unsupervised_method.fit_transform(nn_representations)
+    
+    return embedding
     
     

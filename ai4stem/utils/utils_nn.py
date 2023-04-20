@@ -418,6 +418,15 @@ def start_training(X_train, X_val, y_train, y_val,
     return acc_training, acc_validation, model, history
 
 
+def reshape_data_to_input_size(data, model):
+    
+    # reshape data
+    input_shape_from_model = model.layers[0].get_input_at(0).get_shape().as_list()[1:]
+    target_shape = tuple([-1] + input_shape_from_model)
+    reshaped_data = np.reshape(data, target_shape)
+    
+    return reshaped_data
+
 def get_truncated_model(model, layer_name):
     # Define model, where remove last classification layer
     inputs = model.input

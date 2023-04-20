@@ -1,6 +1,6 @@
 import numpy as np
 # from ai4stem.descriptors.fft_haadf import FFT_HAADF
-from ai4stem.utils.utils_nn import predict_with_uncertainty
+from ai4stem.utils.utils_nn import predict_with_uncertainty, reshape_data_to_input_size
 from ai4stem.utils.utils_data import load_pretrained_model
 from ai4stem.utils.utils_fft import calc_fft
 import logging
@@ -66,7 +66,8 @@ def localwindow(image_in, stride_size, pixel_max=100):
 def predict(image,
             model=None, n_iter=100,
             stride_size=[36, 36], window_size=100,
-            descriptor_params={'sigma': None, 'thresholding': True}):
+            descriptor_params={'sigma': None, 'thresholding': True},
+            only_fragments_and_descriptor=False):
     """
     Given input funciton, apply neural-network classifier to classify the image
     in ai4stem-style (i.e., predict symmetry, lattice orientation, as well as quantify
@@ -87,6 +88,10 @@ def predict(image,
     descriptor_params : dict, optional
         Dictionary with options for FFT-HAADF descritpor. 
         The default is {'sigma': None, 'thresholding': False}.
+    only_fragments_and_descriptor : bool, optional
+        If True, only fragmentation and FFT-HAADF calculation
+        is performed, no neural-network analysis is conducted.
+        The default is False.
 
     Returns
     -------
@@ -119,16 +124,23 @@ def predict(image,
         fft_desc = calc_fft(sliced_image, sigma=descriptor_params['sigma'], 
                             thresholding=descriptor_params['thresholding'])
         fft_descriptors.append(fft_desc)
-    
+    if only_fragments_and_descriptor:
+        logging.info("Return local fragments and descriptors.")
+        sliced_images = np.reshape(sliced_images, (ni, nj, window_size, window_size))
+        fft_descriptors = np.reshape(fft_descriptors, (ni, nj, 
+                                                       fft_descriptors[0].shape[0],
+                                                       fft_descriptors[0].shape[1]))
+        return sliced_images, fft_descriptors
     # Load model
     logging.info("Load model.")
     if model == None:
         model = load_pretrained_model()
-    repeated_images = np.array([np.stack([_]) for _ in fft_descriptors])
-    repeated_images = np.moveaxis(repeated_images, 1, -1)
+    # repeated_images = np.array([np.stack([_]) for _ in fft_descriptors])
+    # repeated_images = np.moveaxis(repeated_images, 1, -1)
+    input_data = reshape_data_to_input_size(fft_descriptors, model)
 
     logging.info("Calculate neural-network predictions and uncertainty.")
-    prediction, uncertainty = predict_with_uncertainty(repeated_images, 
+    prediction, uncertainty = predict_with_uncertainty(input_data, 
                                                    model=model, 
                                                    model_type='classification', 
                                                    n_iter=n_iter)
