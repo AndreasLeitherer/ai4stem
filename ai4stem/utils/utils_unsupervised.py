@@ -7,6 +7,7 @@ from io import BytesIO
 import base64
 from ai4stem.utils.utils_prediction import predict
 from ai4stem.utils.utils_nn import get_truncated_model, get_nn_representations, reshape_data_to_input_size
+import logging
 
 class UnsupervisedLearning():
     """
@@ -18,24 +19,22 @@ class UnsupervisedLearning():
     def __init__(self, method='umap', params={'n_neighbors': 200,
                                               'min_dist': 0.9,
                                               'metric': 'euclidean',
-                                              'n_components': 2},
-                 mapper=None):
+                                              'n_components': 2}):
         
         self.method = method
         self.params = params
-        self.mapper = None
     
     def fit(self, data):
         if self.method == 'umap':
-            mapper = umap.fit(data, **self.params)
+            mapper = umap.UMAP(**self.params).fit(data)
             return mapper
     def fit_transform(self, data):
         if self.method == 'umap':
-            embedding = umap.fit_transform(data, **self.params)
+            embedding = umap.UMAP(**self.params).fit_transform(data)
             return embedding
-    def transform(self, data):
+    def transform(self, data, mapper):
         if self.method == 'umap':
-            embedding = self.mapper.transform(data)
+            embedding = mapper.transform(data)
             return embedding
 
 def embeddable_image(data):
@@ -108,12 +107,16 @@ def unsupervised_analysis(image, window_size=100, stride_size=[36, 36],
     data = reshape_data_to_input_size(fft_descriptors, model)
     
     # get neural-network representations
+    logging.info('Calculate neural-network representations.')
     nn_representations = get_nn_representations(model, data, 
                                                 layer_name, n_iter)
     
     # conduct unsupervised analysis
+    logging.info('Apply unsupervised method {}'.format(method))
     unsupervised_method = UnsupervisedLearning(method, params)
     embedding = unsupervised_method.fit_transform(nn_representations)
+    
+    logging.info('Analysis finished.')
     
     return embedding
     

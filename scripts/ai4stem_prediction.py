@@ -1,12 +1,19 @@
+"""
+Example scriptfor conducting supervised analysis  (classification and uncertainty estimation)
+using AI-STEM.
+
+"""
+
 import os
 # tensorflow info/warnings switched off
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 import numpy as np
 
-from ai4stem.utils.utils_data import load_pretrained_model, load_example_image
+from ai4stem.utils.utils_data import load_pretrained_model, load_example_image, load_class_dicts
 from ai4stem.utils.utils_prediction import predict
 
 import logging
@@ -27,7 +34,7 @@ if __name__ == '__main__':
     # Specify window size in untis of angstrom
     # (converted to pixels automatically, given pixel/angstrom relation)
     window_size_angstrom = 12.
-    pixel_to_angstrom = 0.12452489444788318
+    pixel_to_angstrom = 0.1245
     # Adapt window size
     window_size = window_size_angstrom * (1. / pixel_to_angstrom)
     window_size = int(round(window_size))
@@ -59,8 +66,9 @@ if __name__ == '__main__':
                                                                       descriptor_params)
     
     # Visualize results
+    numerical_to_text_labels, text_to_numerical_labels = load_class_dicts()
     matplotlib.rcParams.update({'font.size': 10})
-    argmax_pred = prediction.argmax(axis=-1)
+    assignments = prediction.argmax(axis=-1)
 
     fig, axs = plt.subplots(1, 3, figsize=(10, 10))
 
@@ -68,9 +76,14 @@ if __name__ == '__main__':
     axs[0].set_title('Input image')
     fig.colorbar(im1, ax=axs[0], orientation='vertical', fraction=0.05)
 
-    im2 = axs[1].imshow(argmax_pred, cmap='tab10')
+    im2 = axs[1].imshow(assignments, cmap='tab10')
     axs[1].set_title('Assigned label')
-    fig.colorbar(im2, ax=axs[1],  orientation='vertical', fraction=0.05)
+    # add nice legend for assignments
+    all_colors = plt.cm.tab10.colors
+    unique_assignments = np.unique(assignments.flatten())
+    my_colors = [all_colors[idx] for idx in unique_assignments]
+    patches = [mpatches.Patch(facecolor=c, edgecolor=c) for c in my_colors]
+    axs[1].legend(patches, sorted(text_to_numerical_labels.keys()), handlelength=0.8, loc='lower right')
 
     im3 = axs[2].imshow(uncertainty, cmap='hot', vmin=0.0)
     axs[2].set_title('Bayesian uncertainty \n (mutual information)')
