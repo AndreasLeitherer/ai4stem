@@ -5,7 +5,7 @@ This repository is under active development (especially the folders 'ai4stem/des
 
     A. Leitherer, B.C. Yeo, C. H. Liebscher, and L. M. Ghiringhelli.     
     "Automatic Identification of Crystal Structures and Interfaces via Artificial-Intelligence-based Electron Microscopy" 
-    arXiv:2303.12702 (2023) https://doi.org/10.48550/arXiv.2303.12702
+    npj Comput Mater 9, 179 (2023). https://doi.org/10.1038/s41524-023-01133-1
 
 For several examples on how to conduct analysis with ai4stem, the scripts and notebooks folders in this repository should be a good starting point.
 
@@ -25,6 +25,10 @@ We recommend to create a virtual python >=3.7 environment
     git clone https://github.com/AndreasLeitherer/ai4stem.git
     git cd ai4stem
     pip install -e .
+
+or simply run
+
+    pip install 'git+https://github.com/AndreasLeitherer/ai4stem.git'
 
 Moreover, several requirements are listed in the requirements text document and can be easily installed via
 
