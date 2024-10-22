@@ -3,7 +3,7 @@ pandas
 matplotlib
 matplotlib-scalebar
 opencv-python
-tensorflow
+tensorflow<=2.10.0
 scipy
 scikit-image
 abtem
